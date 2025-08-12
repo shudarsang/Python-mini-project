@@ -1,5 +1,12 @@
-from athletics_chat_bot_openai import get_chatbot_reply
-from one_word_chat_bot_openai import one_word_response
+#from open_ai.athletics_chat_bot_openai import get_chatbot_reply
+#from open_ai.one_word_chat_bot_openai import one_word_response
+
+from langchn.athletics_chat_bot_langchain import get_chatbot_reply as langchain_athlitics_chat
+from langchn.one_word_chat_bot_langchain import one_word_response as langchain_oneword_chat
+
+from open_ai.athletics_chat_bot_openai import get_chatbot_reply as openai_athlitics_chat
+from open_ai.one_word_chat_bot_openai import one_word_response as openai_oneword_chat
+
 from fastapi.responses import HTMLResponse
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -41,6 +48,7 @@ def tray():
 
 
 class UserMessage(BaseModel):
+    framework: str
     messages: list  # [{"role": "user", "content": "..."}]
 
 class ChatResponse(BaseModel):
@@ -51,8 +59,14 @@ async def athlitics_ai(request: UserMessage):
     print(request.messages[-1])
     print(type(request.messages[-1]))
     try:
-        reply = get_chatbot_reply(request.messages[-1])
-        return {"reply": reply}
+        if request.framework == "openai":
+            reply = openai_athlitics_chat(request.messages)
+            return {"reply": reply}
+        elif request.framework == "langchain":
+            reply = langchain_athlitics_chat(request.messages)
+            return {"reply": reply}
+        else:
+            return {"reply": f"Error: Framework type erroe"}        
     except Exception as e:
         return {"reply": f"Error: {str(e)}"}
 
@@ -60,8 +74,15 @@ async def athlitics_ai(request: UserMessage):
 @app.post("/chat/one-word", response_model=ChatResponse)
 async def oneword_ai(request: UserMessage):
     try:
-        reply = one_word_response(request.messages)
-        return {"reply": reply}
+        if request.framework == "openai":
+            reply = openai_oneword_chat(request.messages)
+            return {"reply": reply}
+        elif request.framework == "langchain":
+            reply = langchain_oneword_chat(request.messages)
+            return {"reply": reply}
+        else:
+            return {"reply": f"Error: Framework type erroe"}        
+        
     except Exception as e:
         print(request)
         return {"reply": f"Error: {str(e)}"}
